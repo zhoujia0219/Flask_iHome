@@ -24,5 +24,5 @@ def index():
 
 if __name__ == '__main__':
     # 运行开发web服务器
-    app.run(debug=True)
-    # manager.run()
+    # app.run(debug=True)
+    manager.run()
