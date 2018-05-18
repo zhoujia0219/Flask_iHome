@@ -83,6 +83,7 @@ def send_sms_code():
     # 5. 返回应答，发送短信成功
     return jsonify(errno=RET.OK, errmsg="发送短信验证码成功")
 
+
 @api.route("/image_code")
 def get_image_code():
     # print 1
