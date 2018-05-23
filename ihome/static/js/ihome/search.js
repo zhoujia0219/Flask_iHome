@@ -30,7 +30,7 @@ function updateFilterDateDisplay() {
 // 更新房源列表信息
 // action表示从后端请求的数据在前端的展示方式
 // 默认采用追加方式
-// action=renew 代表页面数据清空从新展示
+// action=renew 代表页面数据清空重新新展示
 function updateHouseData(action) {
     var areaId = $(".filter-area>li.active").attr("area-id");
     if (undefined == areaId) areaId = "";
@@ -38,21 +38,49 @@ function updateHouseData(action) {
     var endDate = $("#end-date").val();
     var sortKey = $(".filter-sort>li.active").attr("sort-key");
     var params = {
-        aid:areaId,
-        sd:startDate,
-        ed:endDate,
-        sk:sortKey,
-        p:next_page
+        aid:areaId, // 地区id
+        sd:startDate, // 搜索起始时间
+        ed:endDate, // 搜索结束时间
+        sk:sortKey, // 排序方式
+        p:next_page // 页码
     };
+
     // TODO: 获取房屋列表信息
+    $.get("/api/v1.0/houses", params, function (resp) {
+        // 设置是否正在向后端查询数据的标志为false
+        house_data_querying = false;
+
+        if (resp.errno == "0") {
+            // 设置分页之后结果总页数
+            total_page = resp.data.total_page;
+
+            // 搜索成功
+            var html = template("house-list-tmpl", {"houses": resp.data.houses});
+            if (action == "renew") {
+                // 清空原有页面的内容并且重新展示
+                $(".house-list").html(html);
+            }
+            else {
+                // 当前页页码加1
+                cur_page += 1;
+                // 将获取房屋信息追加到原有信息的后面
+                $(".house-list").append(html);
+            }
+        }
+        else {
+            // 搜索失败
+            alert(resp.errmsg);
+        }
+    })
+
 }
 
 $(document).ready(function(){
     var queryData = decodeQuery();
     var startDate = queryData["sd"];
     var endDate = queryData["ed"];
-    $("#start-date").val(startDate); 
-    $("#end-date").val(endDate); 
+    $("#start-date").val(startDate);
+    $("#end-date").val(endDate);
     updateFilterDateDisplay();
     var areaName = queryData["aname"];
     if (!areaName) areaName = "位置区域";
@@ -79,7 +107,7 @@ $(document).ready(function(){
             }
             // 在页面添加好城区选项信息后，更新展示房屋列表信息
             updateHouseData("renew");
-            var windowHeight = $(window).height()
+            var windowHeight = $(window).height();
             // 为窗口的滚动添加事件函数
             window.onscroll=function(){
                 // var a = document.documentElement.scrollTop==0? document.body.clientHeight : document.documentElement.clientHeight;
@@ -87,10 +115,12 @@ $(document).ready(function(){
                 var c = document.documentElement.scrollTop==0? document.body.scrollHeight : document.documentElement.scrollHeight;
                 // 如果滚动到接近窗口底部
                 if(c-b<windowHeight+50){
+                    // alert("滚动到了窗口底部");
                     // 如果没有正在向后端发送查询房屋列表信息的请求
                     if (!house_data_querying) {
                         // 将正在向后端查询房屋列表信息的标志设置为真
                         house_data_querying = true;
+
                         // 如果当前页面数还没到达总页数
                         if(cur_page < total_page) {
                             // 将要查询的页数设置为当前页数加1

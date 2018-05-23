@@ -12,6 +12,20 @@ from ihome.utils.response_code import RET
 from . import api
 
 
+@api.route("/sessions")
+def check_user_login():
+    """
+    获取登录用户信息:
+    """
+    # 尝试从session获取user_id 和 username
+    # 如果取不到，返回空字符串
+    user_id = session.get("user_id", '')
+    username = session.get("username", '')
+
+    # 返回数据
+    return jsonify(errno=RET.OK, errmsg="OK", data={"user_id": user_id, "username": username})
+
+
 @api.route("/sessions", methods=['DELETE'])
 def logout():
     """

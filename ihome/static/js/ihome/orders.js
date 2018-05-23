@@ -19,10 +19,73 @@ $(document).ready(function(){
     $(window).on('resize', centerModals);
 
     // TODO: 查询房客订单
+    $.get("/api/v1.0/orders?role=lodger", function (resp) {
+        if (resp.errno == "0") {
+            // 成功
+            var html = template("orders-list-tmpl", {"orders": resp.data});
+            $(".orders-list").html(html);
 
-    // TODO: 查询成功之后需要设置评论的相关处理
-    $(".order-comment").on("click", function(){
-        var orderId = $(this).parents("li").attr("order-id");
-        $(".modal-comment").attr("order-id", orderId);
+            // TODO: 查询成功之后需要设置评论的相关处理
+            $(".order-comment").on("click", function(){
+                var orderId = $(this).parents("li").attr("order-id");
+                $(".modal-comment").attr("order-id", orderId);
+            });
+
+            // 订单评论
+            $(".modal-comment").click(function () {
+                // 获取订单id
+                var order_id = $(this).attr("order-id");
+
+                var comment = $("#comment").val();
+                if (!comment) {
+                    alert("请输入评论信息!");
+                    return;
+                }
+
+                var params = {
+                    "comment": comment
+                };
+
+                // 请求评论
+                $.ajax({
+                    "url": "/api/v1.0/order/" + order_id + '/comment',
+                    "type": "put",
+                    "data": JSON.stringify(params),
+                    "contentType": "application/json",
+                    "headers": {
+                        "X-CSRFToken": getCookie("csrf_token")
+                    },
+                    "success": function (resp) {
+                        if (resp.errno == "0") {
+                            // 成功
+                            // 设置页面上订单状态
+                            $(".orders-list>li[order-id="+ order_id +"]>div.order-content>div.order-text>ul li:eq(4)>span").html("已完成");
+                            // 隐藏发表评论按钮
+                            $("ul.orders-list>li[order-id="+ order_id +"]>div.order-title>div.order-operate").hide();
+                            // 隐藏弹出的评论输入框
+                            $("#comment-modal").modal("hide");
+                        }
+                        else if (resp.errno == "4101") {
+                            // 用户未登录，跳转到登录页面
+                            location.href = "login.html";
+                        }
+                        else {
+                            // 出错
+                            alert(resp.errmsg);
+                        }
+                    }
+                })
+            })
+        }
+        else if (resp.errno == "4101") {
+            // 用户未登录，跳转到登录页面
+            location.href = "login.html";
+        }
+        else {
+            // 出错
+            alert(resp.errmsg);
+        }
     });
+
+
 });

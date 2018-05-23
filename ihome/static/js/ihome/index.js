@@ -59,26 +59,57 @@ function goToSearchPage(th) {
 
 $(document).ready(function(){
     // TODO: 检查用户的登录状态
-    $(".top-bar>.register-login").show();
-    // TODO: 获取幻灯片要展示的房屋基本信息
 
-    // TODO: 数据设置完毕后,需要设置幻灯片对象，开启幻灯片滚动
-    var mySwiper = new Swiper ('.swiper-container', {
-        loop: true,
-        autoplay: 2000,
-        autoplayDisableOnInteraction: false,
-        pagination: '.swiper-pagination',
-        paginationClickable: true
+    $.get("/api/v1.0/sessions", function (resp) {
+        if (resp.data.username && resp.data.user_id) {
+            // 用户已登录，显示登录用户的用户名
+            $(".top-bar>.user-info>.user-name").html(resp.data.username);
+            $(".top-bar>.user-info").show();
+        }
+        else {
+            // 用户未登录，显示注册和登录按钮
+            $(".top-bar>.register-login").show();
+        }
+    });
+    // TODO: 获取幻灯片要展示的房屋基本信息
+    $.get("/api/v1.0/house/index", function (resp) {
+        if (resp.errno == "0") {
+            // 获取成功
+            var html = template("swiper-houses-tmpl", {"houses": resp.data});
+            $(".swiper-wrapper").html(html);
+            // TODO: 数据设置完毕后,需要设置幻灯片对象，开启幻灯片滚动
+            var mySwiper = new Swiper ('.swiper-container', {
+                loop: true,
+                autoplay: 2000,
+                autoplayDisableOnInteraction: false,
+                pagination: '.swiper-pagination',
+                paginationClickable: true
+            });
+        }
+        else {
+            // 获取失败
+            alert(resp.errmsg);
+        }
     });
 
     // TODO: 获取城区信息,获取完毕之后需要设置城区按钮点击之后相关操作
-
-    // TODO: 城区按钮点击之后相关操作
-    $(".area-list a").click(function(e){
-        $("#area-btn").html($(this).html());
-        $(".search-btn").attr("area-id", $(this).attr("area-id"));
-        $(".search-btn").attr("area-name", $(this).html());
-        $("#area-modal").modal("hide");
+    $.get("/api/v1.0/areas", function (resp) {
+        if (resp.errno == "0") {
+            // 获取城区信息成功
+            var html = template("area-list-tmpl",{"areas": resp.data});
+            $(".area-list").html(html);
+            // TODO: 城区按钮点击之后相关操作
+            $(".area-list a").click(function(e){
+                $("#area-btn").html($(this).html());
+                $(".search-btn").attr("area-id", $(this).attr("area-id"));
+                $(".search-btn").attr("area-name", $(this).html());
+                $("#area-modal").modal("hide");
+            });
+        }
+        else {
+            // 获取城区信息失败
+            alert(resp.errmsg);
+        }
     });
 
     $('.modal').on('show.bs.modal', centerModals);      //当模态框出现的时候
